@@ -1,0 +1,121 @@
+---
+title: "Time Series Forcast"
+output: html_notebook
+---
+
+```{r}
+# Read train.csv
+train_data <- read.csv("train.csv")
+
+# Convert 'date' column to Date type
+train_data$date <- as.Date(train_data$date)
+
+# Aggregate sales by date
+aggregated_sales <- aggregate(sales ~ date, data = train_data, FUN = sum)
+
+# Display the aggregated sales data
+print(aggregated_sales)
+
+```
+
+aggregated_sales:
+aggregated_sales is a dataframe that contains aggregated sales data. Each row represents a unique date, and the 'sales' column contains the total sales for that date.
+This dataframe is suitable for basic data analysis, summary statistics, and data manipulation tasks.
+ts_aggregated_sales:
+ts_aggregated_sales is a time series object of class ts. It is created by aggregating the sales data by date and then converting it into a time series object.
+The ts object has a specific structure designed for time series analysis. It is especially useful for time series forecasting, decomposition, and other time series-specific analyses.
+The ts object contains additional information such as the start and end dates, and the frequency of observations.
+
+```{r}
+# Convert aggregated sales data to ts object
+ts_aggregated_sales <- ts(aggregated_sales$sales, start = c(2013, 1), end = c(2014, 7), frequency = 365)
+
+# Display the ts object
+#print(ts_aggregated_sales)
+
+```
+
+
+
+```{r}
+# Plot sales against time
+plot(aggregated_sales$date, aggregated_sales$sales, type = "l", xlab = "Date", ylab = "Sales", main = "Sales Over Time")
+
+```
+
+
+```{r}
+# Plot the time series using plot
+plot(ts_aggregated_sales, xlab = "Date", ylab = "Sales", main = "Sales Over Time")
+
+```
+
+A seasonal plot is similar to a time plot except that the data are plotted against the individual “seasons”
+
+
+```{r}
+library(forecast)
+
+# Draw seasonal plot
+seasonplot(ts_aggregated_sales, main = "Seasonal Plot of Sales")
+
+```
+
+Just as correlation measures the extent of a linear relationship between two variables, autocorrelation measures the linear relationship between lagged values of a time series.
+
+```{r}
+
+ggAcf(ts_aggregated_sales, lag = 48)
+```
+
+
+
+
+```{r}
+# Load the forecast package
+library(forecast)
+
+
+# Forecast using rwf() with drift
+forecast_result <- rwf(ts_aggregated_sales, h = 10, drift = TRUE)
+
+```
+
+
+```{r}
+library(ggplot2)
+```
+Some simple forecasting methods
+Average method
+Here, the forecasts of all future values are equal to the average (or “mean”) of the historical data
+
+Naïve method
+ set all forecasts to be the value of the last observation.
+Seasonal naïve method
+set each forecast to be equal to the last observed value from the same season
+Drift method
+A variation on the naïve method is to allow the forecasts to increase or decrease over time, where the amount of change over time (called the drift) is set to be the average change seen in the historical data.
+
+
+autolayer() function adds forecast lines to the plot.
+meanf(beer2, h = 11) generates forecasts using the mean method (meanf) with a horizon (h) of 11 quarters.
+naive(beer2, h = 11) generates forecasts using the naive method (naive) with a horizon of 11 quarters.
+snaive(beer2, h = 11) generates forecasts using the seasonal naive method (snaive) with a horizon of 11 quarters. it requires ts object.
+
+
+
+```{r}
+# Set training data from 2013 to 2014 (July)
+forecast_window <- window(ts_aggregated_sales, start = c(2013, 1), end = c(2014, 7))
+
+# Plot some forecasts
+autoplot(forecast_window) +
+  autolayer(meanf(forecast_window, h = 11), series = "Mean", PI = FALSE) +
+  autolayer(naive(forecast_window, h = 11), series = "Naïve", PI = FALSE) +
+  autolayer(snaive(forecast_window, h = 11), series = "Seasonal naïve", PI = FALSE) +
+  ggtitle("Forecasts for quarterly beer production") +
+  xlab("Year") + ylab("Sales") +
+  guides(colour = guide_legend(title = "Forecast"))
+
+```
+
