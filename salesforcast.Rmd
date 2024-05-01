@@ -27,11 +27,12 @@ The ts object has a specific structure designed for time series analysis. It is 
 The ts object contains additional information such as the start and end dates, and the frequency of observations.
 
 ```{r}
-# Convert aggregated sales data to ts object
-ts_aggregated_sales <- ts(aggregated_sales$sales, start = c(2013, 1), end = c(2014, 7), frequency = 365)
+
+
+
 
 # Display the ts object
-#print(ts_aggregated_sales)
+print(ts_aggregated_sales)
 
 ```
 
@@ -116,6 +117,55 @@ autoplot(forecast_window) +
   ggtitle("Forecasts for quarterly beer production") +
   xlab("Year") + ylab("Sales") +
   guides(colour = guide_legend(title = "Forecast"))
+
+```
+
+
+
+
+To make pattern more consistent across the whole data set we need to remove known sources of variation, as simple patterns lead to accurate forcasts.
+
+So we make adjustment to the data.
+1. Calender adjustment
+2.population adjustment
+3. Inflation adjustments
+4. Mathmematical transformations
+
+
+The rwf function in R stands for "random walk forecast." It's used to generate forecasts for univariate time series data using a simple random walk model. Here's what rwf does:
+
+Random Walk Model:
+The random walk model assumes that future values of the time series are equal to the most recent observed value.
+Mathematically, the forecasted value at time 
+𝑡
+t is equal to the observed value at time 
+𝑡
+−
+1
+t−1.
+Drift:
+The drift parameter in rwf allows you to include a drift component in the random walk model.
+If drift=TRUE, the forecasted values will not only follow the most recent observed value but will also trend upwards or downwards over time. This is useful when there is a systematic upward or downward trend in the data.
+If drift=FALSE, the forecasted values will strictly follow the most recent observed value without any trend component.
+Prediction Intervals:
+rwf can also calculate prediction intervals (PI) around the forecasted values, which provide a range of uncertainty for the forecasts.
+The level parameter specifies the confidence level for the prediction intervals. Common values include 80, 95, or 99, indicating the percentage of confidence in the intervals.
+Forecast Horizon:
+The h parameter specifies the number of periods ahead for which forecasts should be generated.
+For example, setting h=50 would generate forecasts for the next 50 time periods.
+Other Parameters:
+Other parameters, such as lambda (Box-Cox transformation parameter) and biasadj (bias adjustment for back-transformed forecasts), can be used to fine-tune the forecasting process.
+
+```{r}
+# Perform random walk forecasting with drift on ts_aggregated_sales
+fc <- rwf(ts_aggregated_sales, drift=TRUE, lambda=0, h=50, level=80)
+fc2 <- rwf(ts_aggregated_sales, drift=TRUE, lambda=0, h=50, level=80, biasadj=TRUE)
+
+# Plot the time series and forecasts
+autoplot(ts_aggregated_sales) +
+  autolayer(fc, series="Simple back transformation") +
+  autolayer(fc2, series="Bias adjusted", PI=FALSE) +
+  guides(colour=guide_legend(title="Forecast"))
 
 ```
 
